@@ -9,11 +9,11 @@ documentation generator. Funcco adds the capability to add Haskell-style type an
 
 ## Installation
 
-    sudo npm install -g docco
+    sudo npm install -g funcco
 
 ## Usage
 
-      docco [options] FILES
+      funcco [options] FILES
 
     Options:
 
