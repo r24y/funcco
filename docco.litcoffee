@@ -112,15 +112,20 @@ follows it — by detecting which is which, line by line — and then create an
 individual **section** for it. Each section is an object with `docsText` and
 `codeText` properties, and eventually `docsHtml` and `codeHtml` as well.
 
+-- parse :: (String, String, Dict Any) -> [Section]
+
     parse = (source, code, config = {}) ->
       lines    = code.split '\n'
       sections = []
       lang     = getLanguage source, config
       hasCode  = docsText = codeText = ''
+      typeAnnotations = []
 
       save = ->
-        sections.push {docsText, codeText}
+        sections.push {docsText, codeText, typeAnnotations}
         hasCode = docsText = codeText = ''
+        console.log typeAnnotations
+        typeAnnotations = []
 
 Our quick-and-dirty implementation of the literate programming style. Simply
 invert the prose and code relationship on a per-line basis, and then continue as
@@ -138,10 +143,16 @@ normal below.
             isText = yes
             lang.symbol + ' ' + line
 
+      annotFilter = /^\s*--\s+/
       for line in lines
         if line.match(lang.commentMatcher) and not line.match(lang.commentFilter)
           save() if hasCode
-          docsText += (line = line.replace(lang.commentMatcher, '')) + '\n'
+          line = line.replace lang.commentMatcher, ''
+          if line.match annotFilter
+            typeAnnotations.push line.replace annotFilter, ''
+            line = ''
+          else
+            docsText += line + '\n'
           save() if /^(---+|===+)$/.test line
         else
           hasCode = yes
@@ -185,6 +196,7 @@ if not specified.
       for section, i in sections
         code = highlightjs.highlight(language.name, section.codeText).value
         code = code.replace(/\s+$/, '')
+        section.typeHtml = if section.typeAnnotations?.length then "<strong>#{section.typeAnnotations.join '<br>'}</strong>" else ""
         section.codeHtml = "<div class='highlight'><pre>#{code}</pre></div>"
         section.docsHtml = marked(section.docsText)
 
