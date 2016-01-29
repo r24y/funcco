@@ -50,7 +50,33 @@ doesn’t handle your favorite yet, feel free to
 Finally, the <a href="http://coffeescript.org/#literate">“literate” style</a> of <em>any</em>
 language is also supported — just tack an <code>.md</code> extension on the end:
 <code>.coffee.md</code>, <code>.py.md</code>, and so on.</p>
-<h2 id="main-documentation-generation-functions">Main Documentation Generation Functions</h2>
+<h2 id="primary-types-used">Primary Types Used</h2>
+
+        
+        
+      
+        
+        
+        <div class="type-annotation">type Filename = String</div>
+        
+      
+        
+        
+        <div class="type-annotation">type SourceCode = String</div>
+        
+      
+        
+        
+        <div class="type-annotation">type Config = Dict Any</div>
+        
+      
+        
+        
+        <div class="type-annotation">type Section = {docsText :: String, codeText :: SourceCode, typeAnnotations :: [TypeAnnotation]}</div>
+        
+      
+        
+        <h2 id="main-documentation-generation-functions">Main Documentation Generation Functions</h2>
 
         
         
@@ -61,6 +87,11 @@ assets, reading all the source files in, splitting them up into prose+code
 sections, highlighting each file in the appropriate language, and printing them
 out in an HTML template.</p>
 
+        <div class="type-annotation">document :: (Config, () -> ()) -> IO ()</div>
+        
+      
+        
+        
         
         
           <div class='highlight'><pre><span class="hljs-function"><span class="hljs-title">document</span> = <span class="hljs-params">(options = {}, callback)</span> -&gt;</span>
@@ -100,7 +131,12 @@ follows it — by detecting which is which, line by line — and then create an
 individual <strong>section</strong> for it. Each section is an object with <code>docsText</code> and
 <code>codeText</code> properties, and eventually <code>docsHtml</code> and <code>codeHtml</code> as well.</p>
 
-        <strong>parse :: (String, String, Dict Any) -> [Section]</strong>
+        <div class="type-annotation">parse :: (Filename, SourceCode, Config) -> [Section]</div>
+        
+      
+        
+        
+        
         
           <div class='highlight'><pre><span class="hljs-function"><span class="hljs-title">parse</span> = <span class="hljs-params">(source, code, config = {})</span> -&gt;</span>
   lines    = code.split <span class="hljs-string">'\n'</span>
@@ -143,6 +179,7 @@ normal below.</p>
       <span class="hljs-keyword">if</span> line.match annotFilter
         typeAnnotations.push line.replace annotFilter, <span class="hljs-string">''</span>
         line = <span class="hljs-string">''</span>
+        save()
       <span class="hljs-keyword">else</span>
         docsText += line + <span class="hljs-string">'\n'</span>
       save() <span class="hljs-keyword">if</span> <span class="hljs-regexp">/^(---+|===+)$/</span>.test line
@@ -159,6 +196,11 @@ normal below.</p>
 over stdio, and run the text of their corresponding comments through
 <strong>Markdown</strong>, using <a href="https://github.com/chjj/marked">Marked</a>.</p>
 
+        <div class="type-annotation">format :: (Filename, [Section], Config) -> [Section]</div>
+        
+      
+        
+        
         
         
           <div class='highlight'><pre><span class="hljs-function"><span class="hljs-title">format</span> = <span class="hljs-params">(source, sections, config)</span> -&gt;</span>
@@ -200,7 +242,7 @@ if not specified.</p>
   <span class="hljs-keyword">for</span> section, i <span class="hljs-keyword">in</span> sections
     code = highlightjs.highlight(language.name, section.codeText).value
     code = code.replace(<span class="hljs-regexp">/\s+$/</span>, <span class="hljs-string">''</span>)
-    section.typeHtml = <span class="hljs-keyword">if</span> section.typeAnnotations?.length <span class="hljs-keyword">then</span> <span class="hljs-string">"&lt;strong&gt;<span class="hljs-subst">#{section.typeAnnotations.join <span class="hljs-string">'&lt;br&gt;'</span>}</span>&lt;/strong&gt;"</span> <span class="hljs-keyword">else</span> <span class="hljs-string">""</span>
+    section.typeHtml = <span class="hljs-keyword">if</span> section.typeAnnotations?.length <span class="hljs-keyword">then</span> <span class="hljs-string">"&lt;div class=\"type-annotation\"&gt;<span class="hljs-subst">#{section.typeAnnotations.join <span class="hljs-string">'&lt;/div&gt;&lt;div class=\"type-annotation\"&gt;'</span>}</span>&lt;/div&gt;"</span> <span class="hljs-keyword">else</span> <span class="hljs-string">""</span>
     section.codeHtml = <span class="hljs-string">"&lt;div class='highlight'&gt;&lt;pre&gt;<span class="hljs-subst">#{code}</span>&lt;/pre&gt;&lt;/div&gt;"</span>
     section.docsHtml = marked(section.docsText)</pre></div>
         
@@ -210,6 +252,11 @@ if not specified.</p>
 documentation file by passing the completed HTML sections into the template,
 and rendering it to the specified output path.</p>
 
+        <div class="type-annotation">write :: (Filename, [Section], Config) -> IO ()</div>
+        
+      
+        
+        
         
         
           <div class='highlight'><pre><span class="hljs-function"><span class="hljs-title">write</span> = <span class="hljs-params">(source, sections, config)</span> -&gt;</span>
@@ -247,6 +294,11 @@ name of the source file.</p>
         <p>Default configuration <strong>options</strong>. All of these may be extended by
 user-specified options.</p>
 
+        <div class="type-annotation">defaults: Config</div>
+        
+      
+        
+        
         
         
           <div class='highlight'><pre>defaults =
@@ -264,6 +316,11 @@ user-specified options.</p>
 template, or one of the built-in <strong>layouts</strong>. We only attempt to process
 source files for languages for which we have definitions.</p>
 
+        <div class="type-annotation">configure :: Config -> Config</div>
+        
+      
+        
+        
         
         
           <div class='highlight'><pre><span class="hljs-function"><span class="hljs-title">configure</span> = <span class="hljs-params">(options)</span> -&gt;</span>
@@ -379,6 +436,11 @@ file extension. Detect and tag “literate” <code>.ext.md</code> variants.</p>
         
         <p>Keep it DRY. Extract the funcco <strong>version</strong> from <code>package.json</code></p>
 
+        <div class="type-annotation">version :: String</div>
+        
+      
+        
+        
         
         
           <div class='highlight'><pre>version = JSON.parse(fs.readFileSync(path.join(__dirname, <span class="hljs-string">'package.json'</span>))).version</pre></div>
@@ -394,6 +456,11 @@ file extension. Detect and tag “literate” <code>.ext.md</code> variants.</p>
         <p>Finally, let’s define the interface to run Funcco from the command line.
 Parse options using <a href="https://github.com/visionmedia/commander.js">Commander</a>.</p>
 
+        <div class="type-annotation">run :: [String]? -> IO ()</div>
+        
+      
+        
+        
         
         
           <div class='highlight'><pre><span class="hljs-function"><span class="hljs-title">run</span> = <span class="hljs-params">(args = process.argv)</span> -&gt;</span>

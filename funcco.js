@@ -95,6 +95,7 @@
         if (line.match(annotFilter)) {
           typeAnnotations.push(line.replace(annotFilter, ''));
           line = '';
+          save();
         } else {
           docsText += line + '\n';
         }
@@ -136,7 +137,7 @@
       section = sections[i];
       code = highlightjs.highlight(language.name, section.codeText).value;
       code = code.replace(/\s+$/, '');
-      section.typeHtml = ((ref = section.typeAnnotations) != null ? ref.length : void 0) ? "<strong>" + (section.typeAnnotations.join('<br>')) + "</strong>" : "";
+      section.typeHtml = ((ref = section.typeAnnotations) != null ? ref.length : void 0) ? "<div class=\"type-annotation\">" + (section.typeAnnotations.join('</div><div class=\"type-annotation\">')) + "</div>" : "";
       section.codeHtml = "<div class='highlight'><pre>" + code + "</pre></div>";
       results.push(section.docsHtml = marked(section.docsText));
     }

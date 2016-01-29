@@ -30,6 +30,17 @@ Finally, the ["literate" style](http://coffeescript.org/#literate) of *any*
 language is also supported — just tack an `.md` extension on the end:
 `.coffee.md`, `.py.md`, and so on.
 
+Primary Types Used
+------------------
+
+-- type Filename = String
+
+-- type SourceCode = String
+
+-- type Config = Dict Any
+
+-- type Section = {docsText :: String, codeText :: SourceCode, typeAnnotations :: [TypeAnnotation]}
+
 
 Main Documentation Generation Functions
 ---------------------------------------
@@ -38,6 +49,8 @@ Generate the documentation for our configured source file by copying over static
 assets, reading all the source files in, splitting them up into prose+code
 sections, highlighting each file in the appropriate language, and printing them
 out in an HTML template.
+
+-- document :: (Config, () -> ()) -> IO ()
 
     document = (options = {}, callback) ->
       config = configure options
@@ -74,7 +87,7 @@ follows it — by detecting which is which, line by line — and then create an
 individual **section** for it. Each section is an object with `docsText` and
 `codeText` properties, and eventually `docsHtml` and `codeHtml` as well.
 
--- parse :: (String, String, Dict Any) -> [Section]
+-- parse :: (Filename, SourceCode, Config) -> [Section]
 
     parse = (source, code, config = {}) ->
       lines    = code.split '\n'
@@ -113,6 +126,7 @@ normal below.
           if line.match annotFilter
             typeAnnotations.push line.replace annotFilter, ''
             line = ''
+            save()
           else
             docsText += line + '\n'
           save() if /^(---+|===+)$/.test line
@@ -126,6 +140,8 @@ normal below.
 To **format** and highlight the now-parsed sections of code, we use **Highlight.js**
 over stdio, and run the text of their corresponding comments through
 **Markdown**, using [Marked](https://github.com/chjj/marked).
+
+-- format :: (Filename, [Section], Config) -> [Section]
 
     format = (source, sections, config) ->
       language = getLanguage source, config
@@ -158,13 +174,15 @@ if not specified.
       for section, i in sections
         code = highlightjs.highlight(language.name, section.codeText).value
         code = code.replace(/\s+$/, '')
-        section.typeHtml = if section.typeAnnotations?.length then "<strong>#{section.typeAnnotations.join '<br>'}</strong>" else ""
+        section.typeHtml = if section.typeAnnotations?.length then "<div class=\"type-annotation\">#{section.typeAnnotations.join '</div><div class=\"type-annotation\">'}</div>" else ""
         section.codeHtml = "<div class='highlight'><pre>#{code}</pre></div>"
         section.docsHtml = marked(section.docsText)
 
 Once all of the code has finished highlighting, we can **write** the resulting
 documentation file by passing the completed HTML sections into the template,
 and rendering it to the specified output path.
+
+-- write :: (Filename, [Section], Config) -> IO ()
 
     write = (source, sections, config) ->
 
@@ -193,6 +211,8 @@ Configuration
 Default configuration **options**. All of these may be extended by
 user-specified options.
 
+-- defaults: Config
+
     defaults =
       layout:     'parallel'
       output:     'docs'
@@ -205,6 +225,8 @@ user-specified options.
 **Configure** this particular run of Funcco. We might use a passed-in external
 template, or one of the built-in **layouts**. We only attempt to process
 source files for languages for which we have definitions.
+
+-- configure :: Config -> Config
 
     configure = (options) ->
       config = _.extend {}, defaults, _.pick(options, _.keys(defaults)...)
@@ -287,6 +309,8 @@ file extension. Detect and tag "literate" `.ext.md` variants.
 
 Keep it DRY. Extract the funcco **version** from `package.json`
 
+-- version :: String
+
     version = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'))).version
 
 
@@ -295,6 +319,8 @@ Command Line Interface
 
 Finally, let's define the interface to run Funcco from the command line.
 Parse options using [Commander](https://github.com/visionmedia/commander.js).
+
+-- run :: [String]? -> IO ()
 
     run = (args = process.argv) ->
       c = defaults
